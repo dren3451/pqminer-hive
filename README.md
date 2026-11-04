@@ -1,16 +1,25 @@
 # pqminer Hive loader 2
 
-The existing installation URL stays unchanged:
+The installation URL remains:
 
 `https://raw.githubusercontent.com/dren3451/pqminer-hive/main/pqminer-loader1.tar.gz`
 
-The archive now contains loader **2**. The filename remains `loader1` for existing
-Hive flight sheets. It contains Hive scripts, read-only diagnostics and license
-texts; no mining binary, recovered CUDA module or credential is published here.
-The miner is downloaded from the private `dren3451/pqminer` release with archive
-and ELF checksum verification. A previous binary is kept as `pqminer.previous`.
+The archive contains Hive scripts, read-only diagnostics and license texts.
+It downloads the selected private pqminer release with archive and ELF checksum
+verification and retains a previous binary as `pqminer.previous`.
 
-## Flight sheet for the prepared CMP90 rig
+## Standalone compact preview 0.1.21
+
+Version 0.1.21 implements compact in project CUDA C++ and inline PTX, compiled
+into the normal miner binary. It requires no external kernel data file or
+runtime decoder for compact mode.
+
+This is a **development prerelease**, not a speed upgrade. A 180-second
+four-CMP90 synthetic test measured **283.4 TH/s total**, about **70.85 per GPU**.
+That is below the currently installed profile's approximately 83.5 per GPU.
+The 89 TH/s goal has not been reached. Live-pool acceptance for this new
+implementation is still unverified. The prerelease does not replace the stable
+latest release or change an existing flight sheet automatically.
 
 | Field | Value |
 |---|---|
@@ -19,32 +28,25 @@ and ELF checksum verification. A previous binary is kept as `pqminer.previous`.
 | Wallet and worker template | `%WAL%.%WORKER_NAME%` |
 | Pool URL | Keep the selected Pearl pool |
 | Pass | `x`, or the pool's existing setting |
-| Extra config arguments | `-a pearl --pqminer-version 0.1.20 --pearl-kernel compact --pearl-base constant64 --pearl-k 65536` |
+| Preview extra config | `-a pearl --pqminer-version 0.1.21 --pearl-kernel compact --pearl-base constant64 --pearl-k 65536` |
 
-An existing `--gh-token` option is supported and stripped from miner arguments.
-Without it, the loader reads the existing `/hive-config/pqminer.token` or
-`/root/.config/pqminer/codex.token`. Token values are never part of this archive.
-An explicit newer version can upgrade an older manual version floor; an older
-flight cannot silently downgrade that floor. Existing pins are backed up when
-advanced after a successful update.
-
-Compact needs the checksum-pinned local module recovery data already present on
-this CMP90 rig. It is not a self-contained compact installation for a fresh rig.
-Other profiles and algorithms can keep their explicit settings.
+[Preview release](https://github.com/dren3451/pqminer/releases/tag/v0.1.21).
+Existing users can retain their current version pin. Keep the existing
+`--gh-token` option when present; its value must never be posted in chat or
+committed to this repository. The loader can also use existing token files.
+Pool, wallet and worker settings remain in the flight sheet.
 
 ## Diagnostics
 
-After applying the flight and seeing work, run:
+After applying a flight sheet and seeing work, run:
 
 ```bash
 python3 /hive/miners/custom/pqminer/diagnose-cmp90.py
 ```
 
-It samples three minutes of the local API, accepted/rejected counters, each GPU's
-kernel and speed, GPU memory/processes and startup/verification status. It does
-not stop/restart the miner, change files, or dump wallet/config/token contents.
-The result is printed in the terminal and is not uploaded automatically.
+It samples three minutes of local API counters, per-GPU kernel/rate,
+GPU memory/processes and startup/verification status. It does not restart
+mining or print wallet/config/token contents. Output stays in the terminal.
 
-Source files are included here. `bash build-loader.sh` rebuilds the stable URL's
-archive and SHA256SUMS. `LOADER_VERSION` tracks the loader independently of the
-private miner version.
+`bash build-loader.sh` rebuilds the archive and SHA256SUMS. `LOADER_VERSION`
+tracks the loader separately from the private miner version.
