@@ -1,0 +1,11 @@
+pqminer
+Copyright (c) 2026 dren3451. All rights reserved.
+
+This product includes software derived from quantus-miner
+(https://github.com/Quantus-Network/quantus-miner), Copyright Quantus Network,
+licensed under the Apache License, Version 2.0:
+  - kernels/quantus.cu (QPoW CUDA kernels, modified)
+  - src/algos/poseidon2.cpp (Poseidon2 round constants and layer structure)
+The full license text is in third_party/LICENSE.quantus-miner.Apache-2.0.
+
+This product includes nlohmann/json (MIT), third_party/nlohmann/LICENSE.MIT.
