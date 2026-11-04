@@ -10,7 +10,10 @@ import time
 import urllib.request
 
 API = 'http://127.0.0.1:44068/'
-EXPECTED_ELF = '03f3d9f7975f7d0e08eb1a82f8dbdfd36d2e14b68264620939f6c339640ebc01'
+EXPECTED_ELF = 'acb09c85773384fd2d4c4a97b0458fe1aa9473991298b79bc53cb6df0f4ec586'
+LEGACY_ELF = '03f3d9f7975f7d0e08eb1a82f8dbdfd36d2e14b68264620939f6c339640ebc01'
+EXPECTED_MODULE = 'adc93029a76e033258e087b70db975e2dac5614c883416b4ea2ed54305ab04bc'
+MODULE_BYTES = 76064
 
 
 def clean(value):
@@ -52,12 +55,21 @@ def files():
         values['loader_manifest'] = clean(match[1].strip()) if match else None
     path = root/'pqminer'
     if path.is_file() and path.stat().st_size <= 32_000_000:
-        with path.open('rb') as source:
-            digest = hashlib.sha256()
-            for block in iter(lambda:source.read(65536),b''):
-                digest.update(block)
-        values['binary_sha256'] = digest.hexdigest()
-        values['release_020_binary'] = digest.hexdigest()==EXPECTED_ELF
+        binary=path.read_bytes()
+        digest=hashlib.sha256(binary).hexdigest()
+        values['binary_sha256']=digest
+        values['release_020_binary']=digest==LEGACY_ELF
+        values['release_022_binary']=digest==EXPECTED_ELF
+        values['expected_version']='0.1.22'
+        present=False
+        start=1
+        for _ in range(256):
+            position=binary.find(b'\x7fELF',start)
+            if position<0:break
+            start=position+4
+            if position+MODULE_BYTES<=len(binary) and hashlib.sha256(binary[position:position+MODULE_BYTES]).hexdigest()==EXPECTED_MODULE:
+                present=True;break
+        values['embedded_compact_module']=present
     emit(values)
 
 
