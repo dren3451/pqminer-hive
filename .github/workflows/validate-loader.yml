@@ -1,0 +1,48 @@
+name: validate-loader
+on:
+  push:
+    branches: [codex/loader-022]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[packaged]')"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check scripts and rebuild the reproducible loader
+        run: |
+          bash -n build-loader.sh hive/h-config.sh hive/h-run.sh hive/h-stats.sh
+          python3 -m py_compile diagnose-cmp90.py
+          bash build-loader.sh
+          sha256sum -c SHA256SUMS
+          python3 - <<'PY'
+          import tarfile
+          from pathlib import Path
+          with tarfile.open('pqminer-loader1.tar.gz','r:gz') as tar:
+              for item in tar.getmembers():
+                  assert item.name.startswith('pqminer/') or item.name=='pqminer'
+                  assert '..' not in Path(item.name).parts
+                  assert item.isdir() or item.isfile()
+                  if item.isfile():assert not tar.extractfile(item).read(4).startswith(b'\x7fELF')
+              assert b'CUSTOM_VERSION=loader3' in tar.extractfile('pqminer/h-manifest.conf').read()
+              assert tar.extractfile('pqminer/diagnose-cmp90.py').read()==Path('diagnose-cmp90.py').read_bytes()
+          PY
+      - name: Commit the generated archive on the preparation branch
+        if: github.event_name == 'push'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add pqminer-loader1.tar.gz SHA256SUMS
+          if ! git diff --cached --quiet; then
+            git commit -m '[packaged] Refresh loader 3 and 0.1.22 diagnostics'
+            git push origin HEAD:codex/loader-022
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pqminer-loader3
+          path: |
+            pqminer-loader1.tar.gz
+            SHA256SUMS
